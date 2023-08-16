@@ -53,6 +53,7 @@ def latest_versions(session):
     soup = BeautifulSoup(response.text, features='lxml')
     sidebar = find_tag(soup, 'div', attrs={'class': 'sphinxsidebarwrapper'})
     ul_tags = sidebar.find_all('ul')
+
     for ul in ul_tags:
         if 'All versions' in ul.text:
             a_tags = ul.find_all('a')
@@ -62,6 +63,7 @@ def latest_versions(session):
 
     results = [('Ссылка на документацию', 'Версия', 'Статус')]
     pattern = r'Python (?P<version>\d\.\d+) \((?P<status>.*)\)'
+
     for a_tag in a_tags:
         link = a_tag['href']
         text_match = re.search(pattern, a_tag.text)
@@ -102,7 +104,9 @@ def pep(session):
     main_tag = find_tag(soup, 'section', {'id': 'numerical-index'})
     peps_row = main_tag.find_all('tr')
     count_status_in_page = defaultdict(int)
+    pep_count = 0
     result = [('Статус', 'Количество')]
+
     for i in tqdm(range(1, len(peps_row))):
         pep_href_tag = peps_row[i].a['href']
         pep_link = urljoin(MAIN_PEP_URL, pep_href_tag)
@@ -111,6 +115,7 @@ def pep(session):
         main_page_tag = find_tag(soup, 'section', {'id': 'pep-content'})
         main_page_dl_tag = find_tag(main_page_tag, 'dl',
                                     {'class': 'rfc2822 field-list simple'})
+
         for tag in main_page_dl_tag:
             if tag.name == 'dt' and tag.text == 'Status:':
                 page_status = tag.next_sibling.next_sibling.string
@@ -127,9 +132,12 @@ def pep(session):
                             f'Ожидаемые статусы: '
                             f'{EXPECTED_STATUS[table_status]}\n'
                                 )
+        pep_count += 1
+
     for key in count_status_in_page:
         result.append((key, str(count_status_in_page[key])))
-    result.append(('Total', len(peps_row)-1))
+    result.append(('Total', pep_count))
+
     return result
 
 
